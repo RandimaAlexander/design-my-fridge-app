@@ -36,7 +36,7 @@ import {
   TrendingUp,
   Minus,
 } from "lucide-react";
-import profileImage from "./assets/profile.jpg";
+
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const C = {
   green: "#4CAF50",
@@ -406,7 +406,7 @@ function HomeScreen({
           </button>
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#4CAF50]">
             <img
-              src={profileImage}
+              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&auto=format"
               alt="Alex"
               className="w-full h-full object-cover"
             />
