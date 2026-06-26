@@ -392,7 +392,7 @@ function HomeScreen({
       {/* Top bar */}
       <div className="px-5 pt-1 pb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-extrabold text-[#212121] tracking-tight leading-none">
+          <h1 className="text-[28px] font-extrabold text-[#212121] tracking-tight leading-none">
             Good Morning, Alex👋
           </h1>
           <p className="text-[13px] text-[#757575] mt-1">
@@ -406,7 +406,7 @@ function HomeScreen({
           </button>
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#4CAF50]">
             <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&auto=format"
+              src="https://plus.unsplash.com/premium_photo-1738449258742-f98da1490e2d?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="Alex"
               className="w-full h-full object-cover"
             />
@@ -1589,6 +1589,9 @@ function ProfileScreen() {
   const [customAllergen, setCustomAllergen] = useState("");
   const [customHousehold, setCustomHousehold] = useState("");
   const [editingRecipeId, setEditingRecipeId] = useState<number | null>(null);
+  const [profilePic, setProfilePic] = useState(
+    "https://plus.unsplash.com/premium_photo-1738449258742-f98da1490e2d?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  );
 
   const [myRecipes, setMyRecipes] = useState([
     {
@@ -1660,6 +1663,13 @@ function ProfileScreen() {
         ? { ...prev, allergens: current.filter((x) => x !== a) }
         : { ...prev, allergens: [...current, a] };
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePic(URL.createObjectURL(file));
+    }
   };
 
   const handleSaveRecipe = () => {
@@ -2355,18 +2365,31 @@ function ProfileScreen() {
           style={{ background: "linear-gradient(135deg, #1B5E20, #4CAF50)" }}
         />
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-5 pt-3">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-white shadow-lg mb-2">
+          <label className="w-16 h-16 rounded-full overflow-hidden border-[3px] border-white shadow-lg mb-2 cursor-pointer relative group flex-none">
             <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&auto=format"
-              alt="Alex"
+              src={profilePic}
+              alt="Randima"
               className="w-full h-full object-cover"
             />
-          </div>
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
+              <Camera
+                size={20}
+                className="text-white drop-shadow-md"
+                strokeWidth={2.5}
+              />
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+          </label>
           <h2 className="text-[18px] font-extrabold text-white tracking-tight">
             Randima Alexander
           </h2>
           <p className="text-[12px] font-medium text-white/80">
-            Home Cook · San Francisco
+            🌿 Cook Smart • Waste Less
           </p>
         </div>
       </div>
@@ -2562,10 +2585,9 @@ function BottomNav({
   );
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+//App_________________________________________________
 export default function App() {
   const [tab, setTab] = useState<Tab>("home");
-  // Sub-screen stack for the scan flow
   type SubScreen = "none" | "results" | "cooking";
   const [sub, setSub] = useState<SubScreen>("none");
   const [activeRecipe, setActiveRecipe] = useState(RECIPES[0]);
@@ -2584,158 +2606,83 @@ export default function App() {
   const handleBackFromResults = () => setSub("none");
   const handleBackFromCooking = () => setSub("results");
 
-  // When tab changes, clear sub-screen
   const handleTabChange = (t: Tab) => {
     setTab(t);
     setSub("none");
   };
 
-  const showNav = sub === "none";
-
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
+      className="min-h-screen w-full flex items-center justify-center overflow-hidden"
       style={{
         background:
           "linear-gradient(145deg, #E8F5E9 0%, #FFFDE7 40%, #F3E5F5 100%)",
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Decorative blobs */}
+      {/* Mobile App Container */}
       <div
-        className="fixed top-12 left-12 w-48 h-48 rounded-full opacity-40 blur-3xl pointer-events-none"
-        style={{ background: "#A5D6A7" }}
-      />
-      <div
-        className="fixed bottom-20 right-8 w-56 h-56 rounded-full opacity-30 blur-3xl pointer-events-none"
-        style={{ background: "#FFE082" }}
-      />
-
-      {/* Phone shell */}
-      <div
-        className="relative flex-none"
-        style={{
-          width: 390,
-          height: 844,
-          background: "#0E0E0E",
-          borderRadius: 52,
-          boxShadow:
-            "0 50px 100px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08), inset 0 0 0 2px #1C1C1C",
-        }}
+        className="relative bg-[#FFFDF8] shadow-2xl overflow-hidden"
+        style={{ width: 390, height: 844 }}
       >
-        {/* Screen bezel */}
-        <div
-          className="absolute"
-          style={{
-            inset: 3,
-            borderRadius: 49,
-            overflow: "hidden",
-            background: C.bg,
-          }}
-        >
-          {/* Dynamic Island */}
-          <div
-            className="absolute top-3 left-1/2 -translate-x-1/2 z-50"
-            style={{
-              width: 126,
-              height: 36,
-              background: "#0E0E0E",
-              borderRadius: 20,
-            }}
-          >
-            <div
-              className="absolute right-5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full"
-              style={{ background: "#1C1C1C" }}
-            />
-            <div
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
-              style={{ background: "#2A2A2A" }}
-            />
-          </div>
-
-          {/* Content */}
-          <div
-            className="absolute inset-0 flex flex-col"
-            style={{ paddingTop: 52 }}
-          >
-            <AnimatePresence mode="wait">
-              {sub === "none" && (
-                <motion.div
-                  key={`tab-${tab}`}
-                  className="flex-1 flex flex-col overflow-hidden"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                >
-                  {tab === "home" && (
-                    <HomeScreen
-                      onScan={handleScan}
-                      onViewRecipe={handleViewRecipe}
-                    />
-                  )}
-                  {tab === "scan" && <ScanScreen onResults={handleResults} />}
-                  {tab === "favorites" && (
-                    <FavoritesScreen onViewRecipe={handleViewRecipe} />
-                  )}
-                  {tab === "shopping" && <ShoppingScreen />}
-                  {tab === "profile" && <ProfileScreen />}
-                  <BottomNav active={tab} onChange={handleTabChange} />
-                </motion.div>
+        <AnimatePresence mode="wait">
+          {sub === "none" && (
+            <motion.div
+              key={`tab-${tab}`}
+              className="flex-1 flex flex-col h-full pt-8"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              {tab === "home" && (
+                <HomeScreen
+                  onScan={handleScan}
+                  onViewRecipe={handleViewRecipe}
+                />
               )}
-              {sub === "results" && (
-                <motion.div
-                  key="results"
-                  className="flex-1 flex flex-col overflow-hidden"
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                >
-                  <ResultsScreen
-                    onBack={handleBackFromResults}
-                    onViewRecipe={handleViewRecipe}
-                  />
-                  <BottomNav active={tab} onChange={handleTabChange} />
-                </motion.div>
+              {tab === "scan" && <ScanScreen onResults={handleResults} />}
+              {tab === "favorites" && (
+                <FavoritesScreen onViewRecipe={handleViewRecipe} />
               )}
-              {sub === "cooking" && (
-                <motion.div
-                  key={`cooking-${activeRecipe.id}`}
-                  className="flex-1 flex flex-col overflow-hidden"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 30 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  <CookingScreen
-                    recipe={activeRecipe}
-                    onBack={handleBackFromCooking}
-                  />
-                  <BottomNav active={tab} onChange={handleTabChange} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Physical buttons */}
-        <div
-          className="absolute left-[-3px] top-[118px] w-[3px] h-[34px] rounded-l-full"
-          style={{ background: "#1A1A1A" }}
-        />
-        <div
-          className="absolute left-[-3px] top-[164px] w-[3px] h-[64px] rounded-l-full"
-          style={{ background: "#1A1A1A" }}
-        />
-        <div
-          className="absolute left-[-3px] top-[240px] w-[3px] h-[64px] rounded-l-full"
-          style={{ background: "#1A1A1A" }}
-        />
-        <div
-          className="absolute right-[-3px] top-[174px] w-[3px] h-[96px] rounded-r-full"
-          style={{ background: "#1A1A1A" }}
-        />
+              {tab === "shopping" && <ShoppingScreen />}
+              {tab === "profile" && <ProfileScreen />}
+              <BottomNav active={tab} onChange={handleTabChange} />
+            </motion.div>
+          )}
+          {sub === "results" && (
+            <motion.div
+              key="results"
+              className="flex-1 flex flex-col h-full pt-8"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              <ResultsScreen
+                onBack={handleBackFromResults}
+                onViewRecipe={handleViewRecipe}
+              />
+              <BottomNav active={tab} onChange={handleTabChange} />
+            </motion.div>
+          )}
+          {sub === "cooking" && (
+            <motion.div
+              key={`cooking-${activeRecipe.id}`}
+              className="flex-1 flex flex-col h-full pt-8"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <CookingScreen
+                recipe={activeRecipe}
+                onBack={handleBackFromCooking}
+              />
+              <BottomNav active={tab} onChange={handleTabChange} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
