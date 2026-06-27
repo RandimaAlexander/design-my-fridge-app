@@ -594,14 +594,39 @@ function HomeScreen({
 
 // ─── Screen: Scan ─────────────────────────────────────────────────────────────
 function ScanScreen({ onResults }: { onResults: () => void }) {
-  const [detected, setDetected] = useState([
-    "🍅 Tomatoes",
-    "🧄 Garlic",
-    "🥦 Broccoli",
-    "🫑 Bell Pepper",
-  ]);
+  const [detected, setDetected] = useState<string[]>([]);
   const [input, setInput] = useState("");
-  const [scanned, setScanned] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processImage = () => {
+    setIsScanning(true);
+    // Simulate scan delay
+    setTimeout(() => {
+      setDetected(["🍎 Apple", "🍅 Tomato", "🥚 Eggs", "🥕 Carrot", "🥛 Milk"]);
+      setIsScanning(false);
+      onResults();
+    }, 2500);
+  };
+
+  const handleCapture = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // In a real app, you'd capture a frame here.
+      // For this requirement, we trigger the processing flow.
+      stream.getTracks().forEach((track) => track.stop());
+      processImage();
+    } catch (err) {
+      // If camera fails, open gallery
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processImage();
+    }
+  };
 
   const addItem = () => {
     const v = input.trim();
@@ -613,167 +638,105 @@ function ScanScreen({ onResults }: { onResults: () => void }) {
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+      />
+
       <div className="px-5 pt-1 pb-4">
         <h1 className="text-[24px] font-extrabold text-[#212121] tracking-tight">
           Scan Ingredients
         </h1>
         <p className="text-[13px] text-[#757575] mt-0.5">
-          Point camera at your fridge or pantry
+          Point camera or select from gallery
         </p>
       </div>
 
-      {/* Camera viewfinder */}
-      <div className="mx-5 mb-4">
-        <button
-          onClick={() => setScanned(true)}
-          className="w-full h-[220px] rounded-[24px] overflow-hidden relative flex items-center justify-center active:scale-[0.99] transition-transform"
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
-        >
-          <img
-            src={IMG.hero}
-            alt="Camera preview"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/40" />
-          {/* Corner brackets */}
-          {[
-            ["top-4 left-4", "border-t-[3px] border-l-[3px] rounded-tl-xl"],
-            ["top-4 right-4", "border-t-[3px] border-r-[3px] rounded-tr-xl"],
-            ["bottom-12 left-4", "border-b-[3px] border-l-[3px] rounded-bl-xl"],
-            [
-              "bottom-12 right-4",
-              "border-b-[3px] border-r-[3px] rounded-br-xl",
-            ],
-          ].map(([pos, cls], i) => (
-            <div
-              key={i}
-              className={`absolute w-7 h-7 border-white ${pos} ${cls}`}
+      {isScanning ? (
+        <div className="mx-5 h-[220px] rounded-[24px] flex flex-col items-center justify-center bg-white border border-[#E8F5E9] shadow-lg">
+          <div className="w-10 h-10 border-4 border-[#4CAF50] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-[14px] font-bold text-[#2E7D32]">
+            Scanning ingredients...
+          </p>
+        </div>
+      ) : (
+        <div className="mx-5 mb-4">
+          <button
+            onClick={handleCapture}
+            className="w-full h-[220px] rounded-[24px] overflow-hidden relative flex items-center justify-center active:scale-[0.99] transition-transform"
+            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
+          >
+            <img
+              src={IMG.hero}
+              alt="Camera"
+              className="w-full h-full object-cover"
             />
-          ))}
-          {/* Scan line */}
-          {!scanned && (
-            <div
-              className="absolute left-8 right-8 h-[2px] bg-[#4CAF50]/80 top-1/2 -translate-y-1/2"
-              style={{ boxShadow: "0 0 10px #4CAF50" }}
-            />
-          )}
-          {/* Success */}
-          {scanned && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#4CAF50]/20 backdrop-blur-sm">
-              <div className="bg-[#4CAF50] rounded-full p-4">
-                <Check size={32} className="text-white" strokeWidth={3} />
-              </div>
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <Camera size={40} className="text-white" />
             </div>
-          )}
-          {/* Bottom pill */}
-          <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm px-5 py-3 flex items-center justify-between">
-            <span className="text-white text-[12px] font-semibold">
-              {scanned ? "✓ 4 ingredients detected" : "Tap to scan"}
-            </span>
-            <div className="w-8 h-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center">
-              <Camera size={15} className="text-white" />
-            </div>
-          </div>
-        </button>
-      </div>
+          </button>
+        </div>
+      )}
 
-      {/* Upload */}
       <div className="mx-5 mb-4">
         <button
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[16px] border-2 border-dashed text-[13px] font-bold active:opacity-70 transition-opacity"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[16px] border-2 border-dashed text-[13px] font-bold"
           style={{
             borderColor: C.green,
             color: C.green,
             background: C.lightGreen,
           }}
         >
-          <Upload size={15} strokeWidth={2.5} /> Upload from Photo Library
+          <Upload size={15} strokeWidth={2.5} /> Select from Gallery
         </button>
       </div>
 
-      {/* Divider */}
       <div className="mx-5 flex items-center gap-3 mb-4">
         <div className="flex-1 h-px bg-[#EEEEEE]" />
-        <span className="text-[11px] font-extrabold text-[#BDBDBD] uppercase tracking-[0.12em]">
+        <span className="text-[11px] font-extrabold text-[#BDBDBD] uppercase">
           or type manually
         </span>
         <div className="flex-1 h-px bg-[#EEEEEE]" />
       </div>
 
-      {/* Manual input */}
       <div className="mx-5 mb-5 flex gap-2">
-        <div
-          className="flex-1 flex items-center gap-2.5 bg-white rounded-[14px] px-4 py-3 border"
-          style={{
-            borderColor: C.border,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          }}
-        >
-          <Search size={15} className="text-[#BDBDBD]" strokeWidth={2} />
+        <div className="flex-1 flex items-center gap-2.5 bg-white rounded-[14px] px-4 py-3 border shadow-sm">
+          <Search size={15} className="text-[#BDBDBD]" />
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addItem()}
-            placeholder="e.g. spinach, chicken breast…"
-            className="flex-1 text-[13px] text-[#212121] placeholder-[#BDBDBD] bg-transparent outline-none"
+            placeholder="Type ingredient..."
+            className="flex-1 text-[13px] text-[#212121] outline-none"
           />
         </div>
         <button
           onClick={addItem}
-          className="w-12 h-12 rounded-[14px] flex items-center justify-center active:scale-95 transition-transform"
-          style={{
-            background: C.green,
-            boxShadow: "0 4px 12px rgba(76,175,80,0.4)",
-          }}
+          className="w-12 h-12 rounded-[14px] flex items-center justify-center"
+          style={{ background: C.green }}
         >
-          <Plus size={22} className="text-white" strokeWidth={2.5} />
+          <Plus size={22} className="text-white" />
         </button>
       </div>
 
-      {/* Detected chips */}
       {detected.length > 0 && (
         <div className="mx-5 mb-6">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#BDBDBD] mb-2.5">
-            Detected · {detected.length} ingredients
-          </p>
           <div className="flex flex-wrap gap-2">
-            {detected.map((d) => (
+            {detected.map((d, i) => (
               <span
-                key={d}
-                className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-[6px] rounded-full border"
-                style={{
-                  background: C.lightGreen,
-                  color: C.darkGreen,
-                  borderColor: C.chip,
-                }}
+                key={i}
+                className="text-[12px] font-semibold px-3 py-[6px] rounded-full border bg-[#F1F8E9] text-[#2E7D32]"
               >
                 {d}
-                <button
-                  onClick={() => setDetected((p) => p.filter((x) => x !== d))}
-                  className="text-[#81C784] active:text-[#EF5350] transition-colors"
-                >
-                  <X size={11} strokeWidth={2.5} />
-                </button>
               </span>
             ))}
           </div>
         </div>
       )}
-
-      {/* CTA */}
-      <div className="mx-5">
-        <button
-          onClick={onResults}
-          className="w-full flex items-center justify-center gap-2.5 text-white font-extrabold text-[15px] py-4 rounded-[18px] active:scale-[0.98] transition-transform"
-          style={{
-            background: "linear-gradient(135deg, #2E7D32, #4CAF50)",
-            boxShadow: "0 8px 24px rgba(76,175,80,0.4)",
-          }}
-        >
-          <Sparkles size={18} strokeWidth={2} />
-          Find Recipes · {detected.length} ingredients
-        </button>
-      </div>
     </div>
   );
 }
@@ -2622,64 +2585,83 @@ export default function App() {
     >
       {/* Mobile App Container */}
       <div
-        className="relative bg-[#FFFDF8] shadow-2xl overflow-hidden"
+        className="relative bg-[#FFFDF8] shadow-2xl overflow-hidden flex flex-col"
         style={{ width: 390, height: 844 }}
       >
         <AnimatePresence mode="wait">
+          {/* Main content wrapper with fixed Nav */}
           {sub === "none" && (
             <motion.div
               key={`tab-${tab}`}
-              className="flex-1 flex flex-col h-full pt-8"
+              className="flex-1 flex flex-col h-full relative"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              {tab === "home" && (
-                <HomeScreen
-                  onScan={handleScan}
-                  onViewRecipe={handleViewRecipe}
-                />
-              )}
-              {tab === "scan" && <ScanScreen onResults={handleResults} />}
-              {tab === "favorites" && (
-                <FavoritesScreen onViewRecipe={handleViewRecipe} />
-              )}
-              {tab === "shopping" && <ShoppingScreen />}
-              {tab === "profile" && <ProfileScreen />}
-              <BottomNav active={tab} onChange={handleTabChange} />
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto scrollbar-hide pt-8 pb-[100px]">
+                {tab === "home" && (
+                  <HomeScreen
+                    onScan={handleScan}
+                    onViewRecipe={handleViewRecipe}
+                  />
+                )}
+                {tab === "scan" && <ScanScreen onResults={handleResults} />}
+                {tab === "favorites" && (
+                  <FavoritesScreen onViewRecipe={handleViewRecipe} />
+                )}
+                {tab === "shopping" && <ShoppingScreen />}
+                {tab === "profile" && <ProfileScreen />}
+              </div>
+
+              {/* Fixed Navigation Bar */}
+              <div className="absolute bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-[#EDEDED] pb-[env(safe-area-inset-bottom)]">
+                <BottomNav active={tab} onChange={handleTabChange} />
+              </div>
             </motion.div>
           )}
+
+          {/* Sub-screen wrappers remain similar */}
           {sub === "results" && (
             <motion.div
               key="results"
-              className="flex-1 flex flex-col h-full pt-8"
+              className="flex-1 flex flex-col h-full relative"
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
-              <ResultsScreen
-                onBack={handleBackFromResults}
-                onViewRecipe={handleViewRecipe}
-              />
-              <BottomNav active={tab} onChange={handleTabChange} />
+              <div className="flex-1 overflow-y-auto scrollbar-hide pt-8 pb-[100px]">
+                <ResultsScreen
+                  onBack={handleBackFromResults}
+                  onViewRecipe={handleViewRecipe}
+                />
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-[#EDEDED] pb-[env(safe-area-inset-bottom)]">
+                <BottomNav active={tab} onChange={handleTabChange} />
+              </div>
             </motion.div>
           )}
+
           {sub === "cooking" && (
             <motion.div
               key={`cooking-${activeRecipe.id}`}
-              className="flex-1 flex flex-col h-full pt-8"
+              className="flex-1 flex flex-col h-full relative"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
-              <CookingScreen
-                recipe={activeRecipe}
-                onBack={handleBackFromCooking}
-              />
-              <BottomNav active={tab} onChange={handleTabChange} />
+              <div className="flex-1 overflow-y-auto scrollbar-hide pt-8 pb-[100px]">
+                <CookingScreen
+                  recipe={activeRecipe}
+                  onBack={handleBackFromCooking}
+                />
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-[#EDEDED] pb-[env(safe-area-inset-bottom)]">
+                <BottomNav active={tab} onChange={handleTabChange} />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
