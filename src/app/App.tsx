@@ -261,17 +261,96 @@ const RECIPES = [
   },
 ];
 
-const FRIDGE_INGREDIENTS = [
-  { emoji: "🍅", name: "Tomatoes" },
-  { emoji: "🧄", name: "Garlic" },
-  { emoji: "🫑", name: "Bell Pepper" },
-  { emoji: "🥦", name: "Broccoli" },
-  { emoji: "🧅", name: "Onion" },
-  { emoji: "🥕", name: "Carrot" },
-  { emoji: "🍋", name: "Lemon" },
-  { emoji: "🥚", name: "Eggs" },
-  { emoji: "🧀", name: "Parmesan" },
-  { emoji: "🫙", name: "Olive Oil" },
+type FridgeIngredient = {
+  id: number;
+  emoji: string;
+  name: string;
+  category: string;
+  quantity: string;
+  expiry: string;
+};
+
+const FRIDGE_INGREDIENTS: FridgeIngredient[] = [
+  {
+    id: 1,
+    emoji: "🍅",
+    name: "Tomatoes",
+    category: "Produce",
+    quantity: "4 pcs",
+    expiry: "2026-06-29",
+  },
+  {
+    id: 2,
+    emoji: "🧄",
+    name: "Garlic",
+    category: "Produce",
+    quantity: "1 bulb",
+    expiry: "2026-07-08",
+  },
+  {
+    id: 3,
+    emoji: "🫑",
+    name: "Bell Pepper",
+    category: "Produce",
+    quantity: "2 pcs",
+    expiry: "2026-07-01",
+  },
+  {
+    id: 4,
+    emoji: "🥦",
+    name: "Broccoli",
+    category: "Produce",
+    quantity: "300g",
+    expiry: "2026-06-30",
+  },
+  {
+    id: 5,
+    emoji: "🧅",
+    name: "Onion",
+    category: "Produce",
+    quantity: "3 pcs",
+    expiry: "2026-07-10",
+  },
+  {
+    id: 6,
+    emoji: "🥕",
+    name: "Carrot",
+    category: "Produce",
+    quantity: "5 pcs",
+    expiry: "2026-07-04",
+  },
+  {
+    id: 7,
+    emoji: "🍋",
+    name: "Lemon",
+    category: "Produce",
+    quantity: "2 pcs",
+    expiry: "2026-07-02",
+  },
+  {
+    id: 8,
+    emoji: "🥚",
+    name: "Eggs",
+    category: "Dairy",
+    quantity: "6 pcs",
+    expiry: "2026-07-05",
+  },
+  {
+    id: 9,
+    emoji: "🧀",
+    name: "Parmesan",
+    category: "Dairy",
+    quantity: "80g",
+    expiry: "2026-07-12",
+  },
+  {
+    id: 10,
+    emoji: "🫙",
+    name: "Olive Oil",
+    category: "Pantry",
+    quantity: "250ml",
+    expiry: "2026-12-20",
+  },
 ];
 
 const SHOPPING_INIT = [
@@ -378,18 +457,301 @@ function Tag({ label }: { label: string }) {
 }
 
 // ─── Screen: Home ─────────────────────────────────────────────────────────────
+function NotificationsSheet({
+  items,
+  onDismiss,
+  onClose,
+}: {
+  items: { id: number; text: string }[];
+  onDismiss: (id: number) => void;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <motion.div
+        className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="fixed bottom-0 inset-x-0 bg-white rounded-t-[32px] z-50 p-6 shadow-2xl max-h-[85vh] overflow-y-auto"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[18px] font-extrabold text-[#212121]">
+            Notifications
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#F5F5F5] flex items-center justify-center text-[#757575] active:scale-90 transition-transform"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-3">
+          {items.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle size={34} className="mx-auto text-[#4CAF50] mb-2" />
+              <p className="text-[14px] font-bold text-[#757575]">
+                You're all caught up
+              </p>
+            </div>
+          ) : (
+            items.map((n) => (
+              <div
+                key={n.id}
+                className="bg-[#F9FBF9] border border-black/5 rounded-[16px] p-4 flex items-start gap-3"
+              >
+                <Bell size={16} className="text-[#4CAF50] mt-0.5 flex-none" />
+                <p className="flex-1 text-[13px] font-semibold text-[#212121] leading-relaxed">
+                  {n.text}
+                </p>
+                <button
+                  onClick={() => onDismiss(n.id)}
+                  className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-[#BDBDBD] active:scale-90 transition-transform"
+                >
+                  <X size={14} strokeWidth={2.5} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+function IngredientFormSheet({
+  ingredient,
+  onSave,
+  onClose,
+}: {
+  ingredient?: FridgeIngredient;
+  onSave: (item: FridgeIngredient) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<FridgeIngredient>(
+    ingredient ?? {
+      id: Date.now(),
+      emoji: "??",
+      name: "",
+      category: "Produce",
+      quantity: "",
+      expiry: "",
+    },
+  );
+  return (
+    <>
+      <motion.div
+        className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="fixed bottom-0 inset-x-0 bg-white rounded-t-[32px] z-50 p-6 shadow-2xl max-h-[85vh] overflow-y-auto"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[18px] font-extrabold text-[#212121]">
+            {ingredient ? "Edit Ingredient" : "Add Ingredient"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#F5F5F5] flex items-center justify-center text-[#757575]"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-3">
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Ingredient Name"
+            className="bg-[#F9FBF9] border border-[#E0E0E0] rounded-[16px] px-4 py-3.5 text-[14px] font-bold text-[#212121] outline-none"
+          />
+          <input
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+            placeholder="Category"
+            className="bg-[#F9FBF9] border border-[#E0E0E0] rounded-[16px] px-4 py-3.5 text-[14px] font-bold text-[#212121] outline-none"
+          />
+          <input
+            value={form.quantity}
+            onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+            placeholder="Quantity"
+            className="bg-[#F9FBF9] border border-[#E0E0E0] rounded-[16px] px-4 py-3.5 text-[14px] font-bold text-[#212121] outline-none"
+          />
+          <input
+            type="date"
+            value={form.expiry}
+            onChange={(e) => setForm({ ...form, expiry: e.target.value })}
+            className="bg-[#F9FBF9] border border-[#E0E0E0] rounded-[16px] px-4 py-3.5 text-[14px] font-bold text-[#212121] outline-none"
+          />
+          <button
+            onClick={() =>
+              form.name.trim() && onSave({ ...form, name: form.name.trim() })
+            }
+            className="mt-2 py-4 bg-gradient-to-br from-[#2E7D32] to-[#4CAF50] text-white text-[15px] font-extrabold rounded-[18px] shadow-lg active:scale-[0.98] transition-transform"
+          >
+            Save
+          </button>
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+function IngredientDetailSheet({
+  ingredient,
+  onClose,
+  onEdit,
+  onDelete,
+  onViewRecipe,
+}: {
+  ingredient: FridgeIngredient;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onViewRecipe: (r: (typeof RECIPES)[0]) => void;
+}) {
+  const needle = ingredient.name.toLowerCase().replace(/s$/, "");
+  const usedIn = RECIPES.filter((r) =>
+    r.ingredients.some((i) => i.toLowerCase().includes(needle)),
+  );
+  return (
+    <>
+      <motion.div
+        className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="fixed bottom-0 inset-x-0 bg-white rounded-t-[32px] z-50 p-6 shadow-2xl max-h-[85vh] overflow-y-auto"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[18px] font-extrabold text-[#212121]">
+            {ingredient.emoji} {ingredient.name}
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#F5F5F5] flex items-center justify-center text-[#757575]"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+        <div className="bg-[#F9FBF9] border border-black/5 rounded-[16px] p-4 mb-4">
+          <p className="text-[13px] font-bold text-[#212121]">
+            Quantity: {ingredient.quantity || "Not set"}
+          </p>
+          <p className="text-[13px] font-bold text-[#212121] mt-1">
+            Expiry Date: {ingredient.expiry || "Not set"}
+          </p>
+        </div>
+        <h4 className="text-[14px] font-extrabold text-[#212121] mb-2">
+          Recipes using this ingredient
+        </h4>
+        <div className="flex flex-col gap-2 mb-5">
+          {usedIn.length ? (
+            usedIn.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => onViewRecipe(r)}
+                className="bg-[#F1F8E9] text-[#2E7D32] rounded-[14px] px-4 py-3 text-left text-[13px] font-bold active:scale-[0.98] transition-transform"
+              >
+                {r.title}
+              </button>
+            ))
+          ) : (
+            <p className="text-[12px] text-[#757575]">
+              No matching recipes yet.
+            </p>
+          )}
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onEdit}
+            className="flex-1 py-3.5 bg-[#4CAF50] text-white rounded-[16px] text-[14px] font-extrabold active:scale-[0.98] transition-transform"
+          >
+            Edit
+          </button>
+          <button
+            onClick={onDelete}
+            className="flex-1 py-3.5 bg-[#FFEBEE] text-[#EF5350] rounded-[16px] text-[14px] font-extrabold active:scale-[0.98] transition-transform"
+          >
+            Delete
+          </button>
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
 function HomeScreen({
   onScan,
   onViewRecipe,
+  onProfile,
+  onSeeAllRecipes,
+  ingredients,
+  setIngredients,
+  savedIds,
+  onToggleFavorite,
 }: {
   onScan: () => void;
   onViewRecipe: (r: (typeof RECIPES)[0]) => void;
+  onProfile: () => void;
+  onSeeAllRecipes: () => void;
+  ingredients: FridgeIngredient[];
+  setIngredients: React.Dispatch<React.SetStateAction<FridgeIngredient[]>>;
+  savedIds: number[];
+  onToggleFavorite: (id: number) => void;
 }) {
-  const [liked, setLiked] = useState<number[]>([1, 6]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showIngredientForm, setShowIngredientForm] = useState(false);
+  const [editingIngredient, setEditingIngredient] = useState<
+    FridgeIngredient | undefined
+  >();
+  const [selectedIngredient, setSelectedIngredient] =
+    useState<FridgeIngredient | null>(null);
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: "Milk expires tomorrow" },
+    { id: 2, text: "Tomatoes expire in 2 days" },
+    { id: 3, text: "You're missing Cheese for Creamy Tomato Pasta" },
+    { id: 4, text: "Great job! You reduced food waste by 460g this week." },
+    { id: 5, text: "Try Broccoli Stir Fry today." },
+  ]);
+
+  const saveIngredient = (item: FridgeIngredient) => {
+    setIngredients((prev) =>
+      prev.some((x) => x.id === item.id)
+        ? prev.map((x) => (x.id === item.id ? item : x))
+        : [...prev, item],
+    );
+    setShowIngredientForm(false);
+    setEditingIngredient(undefined);
+  };
+  const deleteIngredient = (id: number) => {
+    setIngredients((prev) => prev.filter((x) => x.id !== id));
+    setSelectedIngredient(null);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
-      {/* Top bar */}
       <div className="px-5 pt-1 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-[28px] font-extrabold text-[#212121] tracking-tight leading-none">
@@ -400,21 +762,28 @@ function HomeScreen({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-black/5 relative">
+          <button
+            onClick={() => setShowNotifications(true)}
+            className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-black/5 relative"
+          >
             <Bell size={16} className="text-[#212121]" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#EF5350] rounded-full border border-white" />
+            {notifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#EF5350] rounded-full border border-white" />
+            )}
           </button>
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#4CAF50]">
+          <button
+            onClick={onProfile}
+            className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#4CAF50] active:scale-95 transition-transform"
+          >
             <img
               src="https://plus.unsplash.com/premium_photo-1738449258742-f98da1490e2d?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="Alex"
               className="w-full h-full object-cover"
             />
-          </div>
+          </button>
         </div>
       </div>
 
-      {/* Hero card */}
       <div
         className="mx-5 mb-5 rounded-[24px] overflow-hidden relative"
         style={{ boxShadow: "0 8px 32px rgba(46,125,50,0.25)" }}
@@ -456,21 +825,27 @@ function HomeScreen({
         </div>
       </div>
 
-      {/* Fridge chips */}
       <div className="px-5 mb-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[15px] font-bold text-[#212121]">
             In Your Fridge
           </h3>
-          <button className="flex items-center gap-0.5 text-[12px] font-semibold text-[#4CAF50]">
+          <button
+            onClick={() => {
+              setEditingIngredient(undefined);
+              setShowIngredientForm(true);
+            }}
+            className="flex items-center gap-0.5 text-[12px] font-semibold text-[#4CAF50]"
+          >
             Edit <ChevronRight size={13} strokeWidth={2.5} />
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {FRIDGE_INGREDIENTS.map((i) => (
-            <span
-              key={i.name}
-              className="text-[12px] font-medium px-3 py-[5px] rounded-full border"
+          {ingredients.map((i) => (
+            <button
+              key={i.id}
+              onClick={() => setSelectedIngredient(i)}
+              className="text-[12px] font-medium px-3 py-[5px] rounded-full border active:scale-95 transition-transform"
               style={{
                 background: C.lightGreen,
                 color: C.darkGreen,
@@ -478,10 +853,14 @@ function HomeScreen({
               }}
             >
               {i.emoji} {i.name}
-            </span>
+            </button>
           ))}
           <button
-            className="flex items-center gap-1 text-[12px] font-semibold px-3 py-[5px] rounded-full border border-dashed"
+            onClick={() => {
+              setEditingIngredient(undefined);
+              setShowIngredientForm(true);
+            }}
+            className="flex items-center gap-1 text-[12px] font-semibold px-3 py-[5px] rounded-full border border-dashed active:scale-95 transition-transform"
             style={{
               color: C.green,
               borderColor: C.green,
@@ -493,7 +872,6 @@ function HomeScreen({
         </div>
       </div>
 
-      {/* Quick stats row */}
       <div className="px-5 mb-5">
         <div className="grid grid-cols-3 gap-2.5">
           {[
@@ -521,13 +899,15 @@ function HomeScreen({
         </div>
       </div>
 
-      {/* Suggested recipes */}
       <div className="mb-1">
         <div className="flex items-center justify-between px-5 mb-3">
           <h3 className="text-[15px] font-bold text-[#212121]">
             Suggested for You
           </h3>
-          <button className="flex items-center gap-0.5 text-[12px] font-semibold text-[#4CAF50]">
+          <button
+            onClick={onSeeAllRecipes}
+            className="flex items-center gap-0.5 text-[12px] font-semibold text-[#4CAF50]"
+          >
             See all <ChevronRight size={13} strokeWidth={2.5} />
           </button>
         </div>
@@ -551,11 +931,7 @@ function HomeScreen({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setLiked((p) =>
-                      p.includes(r.id)
-                        ? p.filter((x) => x !== r.id)
-                        : [...p, r.id],
-                    );
+                    onToggleFavorite(r.id);
                   }}
                   className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm"
                 >
@@ -563,7 +939,7 @@ function HomeScreen({
                     size={13}
                     strokeWidth={2}
                     className={
-                      liked.includes(r.id)
+                      savedIds.includes(r.id)
                         ? "fill-[#EF5350] text-[#EF5350]"
                         : "text-[#BDBDBD]"
                     }
@@ -588,11 +964,45 @@ function HomeScreen({
           ))}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showNotifications && (
+          <NotificationsSheet
+            items={notifications}
+            onDismiss={(id) =>
+              setNotifications((prev) => prev.filter((n) => n.id !== id))
+            }
+            onClose={() => setShowNotifications(false)}
+          />
+        )}
+        {showIngredientForm && (
+          <IngredientFormSheet
+            ingredient={editingIngredient}
+            onSave={saveIngredient}
+            onClose={() => {
+              setShowIngredientForm(false);
+              setEditingIngredient(undefined);
+            }}
+          />
+        )}
+        {selectedIngredient && (
+          <IngredientDetailSheet
+            ingredient={selectedIngredient}
+            onClose={() => setSelectedIngredient(null)}
+            onEdit={() => {
+              setEditingIngredient(selectedIngredient);
+              setSelectedIngredient(null);
+              setShowIngredientForm(true);
+            }}
+            onDelete={() => deleteIngredient(selectedIngredient.id)}
+            onViewRecipe={onViewRecipe}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-// ─── Screen: Scan ─────────────────────────────────────────────────────────────
 function ScanScreen({ onResults }: { onResults: () => void }) {
   const [detected, setDetected] = useState([
     "🍅 Tomatoes",
@@ -791,9 +1201,13 @@ function ScanScreen({ onResults }: { onResults: () => void }) {
 function ResultsScreen({
   onBack,
   onViewRecipe,
+  savedIds,
+  onToggleFavorite,
 }: {
   onBack: () => void;
   onViewRecipe: (r: (typeof RECIPES)[0]) => void;
+  savedIds: number[];
+  onToggleFavorite: (id: number) => void;
 }) {
   const ALL_FILTERS = [
     "All",
@@ -803,8 +1217,7 @@ function ResultsScreen({
     "High Protein",
   ];
   const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
-  const [liked, setLiked] = useState<number[]>([1, 6]);
-
+  const [search, setSearch] = useState("");
   const toggle = (f: string) => {
     if (f === "All") {
       setActiveFilters(["All"]);
@@ -816,14 +1229,21 @@ function ResultsScreen({
       : [...next, f];
     setActiveFilters(updated.length ? updated : ["All"]);
   };
-
-  const visible = activeFilters.includes("All")
+  const filteredByTags = activeFilters.includes("All")
     ? RECIPES
     : RECIPES.filter((r) => r.tags.some((t) => activeFilters.includes(t)));
+  const visible = filteredByTags.filter((r) => {
+    const q = search.trim().toLowerCase();
+    return (
+      !q ||
+      r.title.toLowerCase().includes(q) ||
+      r.desc.toLowerCase().includes(q) ||
+      r.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
-      {/* Header */}
       <div className="px-5 pt-1 pb-3 flex items-center gap-3">
         <button
           onClick={onBack}
@@ -844,6 +1264,10 @@ function ResultsScreen({
           </p>
         </div>
         <button
+          onClick={() => {
+            setActiveFilters(["All"]);
+            setSearch("");
+          }}
           className="w-9 h-9 rounded-full bg-white border flex items-center justify-center"
           style={{
             borderColor: C.border,
@@ -857,8 +1281,20 @@ function ResultsScreen({
           />
         </button>
       </div>
-
-      {/* Filter chips */}
+      <div className="px-5 mb-3">
+        <div
+          className="bg-white border rounded-[16px] px-4 py-3 flex items-center gap-2 shadow-sm"
+          style={{ borderColor: C.border }}
+        >
+          <Search size={15} strokeWidth={2.5} className="text-[#BDBDBD]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search recipes"
+            className="flex-1 bg-transparent outline-none text-[13px] font-semibold text-[#212121] placeholder:text-[#BDBDBD]"
+          />
+        </div>
+      </div>
       <div className="px-5 mb-4 flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
         {ALL_FILTERS.map((f) => {
           const on = activeFilters.includes(f);
@@ -881,17 +1317,15 @@ function ResultsScreen({
                     }
               }
             >
-              {f === "Vegetarian" && "🌿 "}
-              {f === "Quick Meals" && "⚡ "}
-              {f === "Healthy" && "💚 "}
-              {f === "High Protein" && "💪 "}
+              {f === "Vegetarian" && "?? "}
+              {f === "Quick Meals" && "? "}
+              {f === "Healthy" && "?? "}
+              {f === "High Protein" && "?? "}
               {f}
             </button>
           );
         })}
       </div>
-
-      {/* Cards */}
       <div className="px-5 flex flex-col gap-4">
         {visible.map((r) => (
           <div
@@ -903,7 +1337,6 @@ function ResultsScreen({
             }}
             onClick={() => onViewRecipe(r)}
           >
-            {/* Image */}
             <div className="relative">
               <img
                 src={r.image}
@@ -914,11 +1347,7 @@ function ResultsScreen({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLiked((p) =>
-                    p.includes(r.id)
-                      ? p.filter((x) => x !== r.id)
-                      : [...p, r.id],
-                  );
+                  onToggleFavorite(r.id);
                 }}
                 className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md"
               >
@@ -926,7 +1355,7 @@ function ResultsScreen({
                   size={16}
                   strokeWidth={2}
                   className={
-                    liked.includes(r.id)
+                    savedIds.includes(r.id)
                       ? "fill-[#EF5350] text-[#EF5350]"
                       : "text-[#BDBDBD]"
                   }
@@ -942,7 +1371,6 @@ function ResultsScreen({
                 ))}
               </div>
             </div>
-            {/* Body */}
             <div className="p-4">
               <h3 className="text-[16px] font-extrabold text-[#212121] tracking-tight mb-1">
                 {r.title}
@@ -993,12 +1421,23 @@ function ResultsScreen({
             </div>
           </div>
         ))}
+        {visible.length === 0 && (
+          <div className="text-center py-12">
+            <Search
+              size={36}
+              strokeWidth={1.5}
+              className="text-[#BDBDBD] mx-auto mb-3"
+            />
+            <p className="text-[14px] font-bold text-[#757575]">
+              No recipes found
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Screen: Cooking ──────────────────────────────────────────────────────────
 function CookingScreen({
   recipe,
   onBack,
@@ -1301,10 +1740,14 @@ function CookingScreen({
 // ─── Screen: Favorites ────────────────────────────────────────────────────────
 function FavoritesScreen({
   onViewRecipe,
+  savedIds,
+  onToggleFavorite,
 }: {
   onViewRecipe: (r: (typeof RECIPES)[0]) => void;
+  savedIds: number[];
+  onToggleFavorite: (id: number) => void;
 }) {
-  const favs = RECIPES.filter((r) => [1, 4, 6].includes(r.id));
+  const favs = RECIPES.filter((r) => savedIds.includes(r.id));
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
       <div className="px-5 pt-1 pb-4">
@@ -1349,18 +1792,36 @@ function FavoritesScreen({
               </div>
             </div>
             <Heart
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(r.id);
+              }}
               size={18}
               strokeWidth={0}
-              className="fill-[#EF5350] text-[#EF5350] flex-none"
+              className="fill-[#EF5350] text-[#EF5350] flex-none active:scale-90 transition-transform"
             />
           </button>
         ))}
+        {favs.length === 0 && (
+          <div className="text-center py-12">
+            <Heart
+              size={36}
+              strokeWidth={1.5}
+              className="text-[#BDBDBD] mx-auto mb-3"
+            />
+            <p className="text-[14px] font-bold text-[#757575]">
+              No saved recipes yet
+            </p>
+            <p className="text-[12px] text-[#BDBDBD] mt-1">
+              Tap a heart on any recipe to save it here.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Screen: Shopping List ────────────────────────────────────────────────────
 function ShoppingScreen() {
   const [items, setItems] = useState(SHOPPING_INIT);
   const [newName, setNewName] = useState("");
@@ -2483,6 +2944,7 @@ function ProfileScreen() {
 
       <div className="mx-5 mt-5">
         <button
+          onClick={() => alert("Signed out of your profile.")}
           className="w-full py-3.5 rounded-[16px] text-[13px] font-extrabold text-[#EF5350] border-2 border-dashed active:opacity-70 transition-opacity"
           style={{ borderColor: "#FFCDD2", backgroundColor: "#FFEBEE" }}
         >
@@ -2597,24 +3059,30 @@ function BottomNav({
 //App_________________________________________________
 export default function App() {
   const [tab, setTab] = useState<Tab>("home");
-  type SubScreen = "none" | "results" | "cooking";
+  type SubScreen = "none" | "results" | "recipes" | "cooking";
   const [sub, setSub] = useState<SubScreen>("none");
+  const [returnSub, setReturnSub] = useState<SubScreen>("none");
   const [activeRecipe, setActiveRecipe] = useState(RECIPES[0]);
+  const [ingredients, setIngredients] =
+    useState<FridgeIngredient[]>(FRIDGE_INGREDIENTS);
+  const [savedRecipeIds, setSavedRecipeIds] = useState<number[]>([1, 4, 6]);
 
+  const toggleFavorite = (id: number) =>
+    setSavedRecipeIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   const handleViewRecipe = (r: (typeof RECIPES)[0]) => {
     setActiveRecipe(r);
+    setReturnSub(sub);
     setSub("cooking");
   };
-
   const handleScan = () => {
     setTab("scan");
     setSub("none");
   };
-
   const handleResults = () => setSub("results");
   const handleBackFromResults = () => setSub("none");
-  const handleBackFromCooking = () => setSub("results");
-
+  const handleBackFromCooking = () => setSub(returnSub);
   const handleTabChange = (t: Tab) => {
     setTab(t);
     setSub("none");
@@ -2624,18 +3092,12 @@ export default function App() {
     <div
       className="min-h-screen w-full flex items-center justify-center overflow-hidden"
       style={{
-        background: "linear-gradient(145deg, #E8F5E9 0%, #FFFDE7 40%, #F3E5F5 100%)",
+        background:
+          "linear-gradient(145deg, #E8F5E9 0%, #FFFDE7 40%, #F3E5F5 100%)",
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* FIX: 
-        1. max-w-[390px]: Limits app width to phone size.
-        2. w-full: Allows it to be responsive on mobile.
-        3. h-[100dvh]: Ensures it fills the screen perfectly.
-      */}
-      <div 
-        className="relative bg-[#FFFDF8] shadow-2xl overflow-hidden flex flex-col w-full max-w-[390px] h-[100dvh]"
-      >
+      <div className="relative bg-[#FFFDF8] shadow-2xl overflow-hidden flex flex-col w-full max-w-[390px] h-[100dvh]">
         <AnimatePresence mode="wait">
           {sub === "none" && (
             <motion.div
@@ -2647,9 +3109,29 @@ export default function App() {
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <div className="flex-1 overflow-y-auto scrollbar-hide pt-8">
-                {tab === "home" && <HomeScreen onScan={handleScan} onViewRecipe={handleViewRecipe} />}
+                {tab === "home" && (
+                  <HomeScreen
+                    onScan={handleScan}
+                    onViewRecipe={handleViewRecipe}
+                    onProfile={() => {
+                      setTab("profile");
+                      setSub("none");
+                    }}
+                    onSeeAllRecipes={() => setSub("recipes")}
+                    ingredients={ingredients}
+                    setIngredients={setIngredients}
+                    savedIds={savedRecipeIds}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                )}
                 {tab === "scan" && <ScanScreen onResults={handleResults} />}
-                {tab === "favorites" && <FavoritesScreen onViewRecipe={handleViewRecipe} />}
+                {tab === "favorites" && (
+                  <FavoritesScreen
+                    onViewRecipe={handleViewRecipe}
+                    savedIds={savedRecipeIds}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                )}
                 {tab === "shopping" && <ShoppingScreen />}
                 {tab === "profile" && <ProfileScreen />}
               </div>
@@ -2658,7 +3140,6 @@ export default function App() {
               </div>
             </motion.div>
           )}
-
           {sub === "results" && (
             <motion.div
               key="results"
@@ -2669,14 +3150,40 @@ export default function App() {
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
               <div className="flex-1 overflow-y-auto scrollbar-hide pt-8">
-                <ResultsScreen onBack={handleBackFromResults} onViewRecipe={handleViewRecipe} />
+                <ResultsScreen
+                  onBack={handleBackFromResults}
+                  onViewRecipe={handleViewRecipe}
+                  savedIds={savedRecipeIds}
+                  onToggleFavorite={toggleFavorite}
+                />
               </div>
               <div className="flex-none bg-white/95 backdrop-blur-xl border-t border-[#EDEDED] pb-[env(safe-area-inset-bottom)]">
                 <BottomNav active={tab} onChange={handleTabChange} />
               </div>
             </motion.div>
           )}
-
+          {sub === "recipes" && (
+            <motion.div
+              key="recipes"
+              className="flex-1 flex flex-col h-full relative"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              <div className="flex-1 overflow-y-auto scrollbar-hide pt-8">
+                <ResultsScreen
+                  onBack={() => setSub("none")}
+                  onViewRecipe={handleViewRecipe}
+                  savedIds={savedRecipeIds}
+                  onToggleFavorite={toggleFavorite}
+                />
+              </div>
+              <div className="flex-none bg-white/95 backdrop-blur-xl border-t border-[#EDEDED] pb-[env(safe-area-inset-bottom)]">
+                <BottomNav active={tab} onChange={handleTabChange} />
+              </div>
+            </motion.div>
+          )}
           {sub === "cooking" && (
             <motion.div
               key={`cooking-${activeRecipe.id}`}
@@ -2687,7 +3194,10 @@ export default function App() {
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
               <div className="flex-1 overflow-y-auto scrollbar-hide pt-8">
-                <CookingScreen recipe={activeRecipe} onBack={handleBackFromCooking} />
+                <CookingScreen
+                  recipe={activeRecipe}
+                  onBack={handleBackFromCooking}
+                />
               </div>
               <div className="flex-none bg-white/95 backdrop-blur-xl border-t border-[#EDEDED] pb-[env(safe-area-inset-bottom)]">
                 <BottomNav active={tab} onChange={handleTabChange} />
